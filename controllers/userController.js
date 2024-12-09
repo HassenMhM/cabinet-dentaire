@@ -14,7 +14,7 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req,res) => {
     const {id}=req.params
     try {
-        const result= await pool.query(`SELECT id,name,email,role_id From users WHERE id=$1;`,[id])
+        const result= await pool.query(`SELECT id,username,email,role_id From users WHERE id=$1;`,[id])
         if(result.rows.length===0) return res.status(404).json({message: 'User not found'})
         res.status(200).json(result.rows[0])
     } catch (err) {
@@ -24,12 +24,12 @@ exports.getUserById = async (req,res) => {
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role_id } = req.body;
+        const { username, email, password, role_id } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const query = `
-            INSERT INTO users (name, email, password, role_id)
+            INSERT INTO users (username, email, password, role_id)
             VALUES ($1, $2, $3, $4) RETURNING *`;
-        const values = [name, email, hashedPassword, role_id];
+        const values = [username, email, hashedPassword, role_id];
         const result = await pool.query(query, values);
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -43,7 +43,7 @@ exports.login = async (req,res) => {
         const userQuery = `SELECT * FROM users WHERE email=$1`
         const userResult=await pool.query(userQuery,[email])
         const user=userResult.rows[0]
-        if(!user) return res.status(404).json({message: 'User noot found'})
+        if(!user) return res.status(404).json({message: 'User not found'})
         const isPasswordValid=await bcrypt.compare(password,user.password)
         if(!isPasswordValid) return res.status(401).json({message: 'Invalid password'})
         const token=jwt.sign({id:user.id,role:user.role_id},process.env.JWT_SECRET,{expiresIn:'1d'})
@@ -55,13 +55,13 @@ exports.login = async (req,res) => {
 
 exports.updateUserInfo = async (req,res) => {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { username, email } = req.body;
     try {
         const query = `
             UPDATE users 
-            SET name = $1, email = $2 
-            WHERE id = $3 RETURNING id, name, email;`;
-        const values = [name, email, id];
+            SET username = $1, email = $2 
+            WHERE id = $3 RETURNING id, username, email;`;
+        const values = [username, email, id];
         const result = await pool.query(query, values);
         if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
         res.status(200).json(result.rows[0]);
@@ -77,7 +77,7 @@ exports.assignRole = async (req, res) => {
         const query = `
             UPDATE users 
             SET role_id = $1 
-            WHERE id = $2 RETURNING id, name, email, role_id`;
+            WHERE id = $2 RETURNING id, username, email, role_id`;
         const result = await pool.query(query, [role_id, id]);
         if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
         res.status(200).json(result.rows[0]);
@@ -102,7 +102,7 @@ exports.changePassword = async (req, res) => {
         const updateQuery = `
             UPDATE users 
             SET password = $1 
-            WHERE id = $2 RETURNING id, name, email`;
+            WHERE id = $2 RETURNING id, username, email`;
         const result = await pool.query(updateQuery, [hashedPassword, id]);
         res.status(200).json(result.rows[0]);
     } catch (error) {
