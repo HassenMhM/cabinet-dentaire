@@ -87,11 +87,11 @@ exports.assignRole = async (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
-    const { id } = req.params;
+    const { email } = req.params;
     const { oldPassword, newPassword } = req.body;
     try {
-        const userQuery = 'SELECT password FROM users WHERE id = $1';
-        const userResult = await pool.query(userQuery, [id]);
+        const userQuery = 'SELECT password FROM users WHERE email = $1';
+        const userResult = await pool.query(userQuery, [email]);
         const user = userResult.rows[0];
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -102,8 +102,8 @@ exports.changePassword = async (req, res) => {
         const updateQuery = `
             UPDATE users 
             SET password = $1 
-            WHERE id = $2 RETURNING id, username, email`;
-        const result = await pool.query(updateQuery, [hashedPassword, id]);
+            WHERE email = $2 RETURNING id, username, email`;
+        const result = await pool.query(updateQuery, [hashedPassword, email]);
         res.status(200).json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });

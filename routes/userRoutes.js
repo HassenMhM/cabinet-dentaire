@@ -7,7 +7,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.put('/:id', updateUserInfo);
 router.put('/:id/role', assignRole);
-router.put('/:id/password', changePassword);
+router.put('/:email/password', changePassword);
 router.delete('/:id', deleteUser);
 
 
