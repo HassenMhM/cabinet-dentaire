@@ -21,7 +21,19 @@ exports.getUserById = async (req,res) => {
         res.status(500).json({error: err.message})
     }
 }
-
+exports.getUserByRoleId = async (req, res) => {
+    const { id } = req.params;
+    if (!id || isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE role_id = $1', [id]);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 exports.register = async (req, res) => {
     try {
         const { username, email, password, role_id } = req.body;
@@ -47,7 +59,7 @@ exports.login = async (req,res) => {
         const isPasswordValid=await bcrypt.compare(password,user.password)
         if(!isPasswordValid) return res.status(401).json({message: 'Invalid password'})
         const token=jwt.sign({id:user.id,role:user.role_id},process.env.JWT_SECRET,{expiresIn:'1d'})
-        res.status(200).json({ message: 'Login successful', token });
+        res.status(200).json({ message: 'Login successful', token ,role_id:user.role_id});
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
